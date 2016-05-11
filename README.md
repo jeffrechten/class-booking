@@ -48,7 +48,7 @@ exports.handler = function(event, context, callback) {
 13. Under Advanced Settings, apply 128 MB memory cap and a 3 sec timeout. Select "No VPC"
 14. After you're done with your Lambda function, you'll create an API Gateway to hit it from the Internet. Find API Gateway under the main services.
 15. Create API and a Resouce, and link it to your existing Lambda function. Use a POST method. Deploy the API & test. The instructions are here: http://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started.html
-..* The Method Execution Integration Request requires a Body Mapping Template Content-Type application/json that is:
+  * The Method Execution Integration Request requires a Body Mapping Template Content-Type application/json that is:
 ```
 #set($inputRoot = $input.path('$'))
 {
@@ -58,9 +58,9 @@ exports.handler = function(event, context, callback) {
   "note" : "$inputRoot.note"
 }
 ```
-..* The Method Execution Integration Response should have a blank Default Mapping as status 200 response and a second non-default 500 response with Lambda Error Regex as `error.*`
-..* The Method Execution Method Response should have a 200 and 500 response configured with no headers and empty models.
-..* Example Swagger Import file:
+  * The Method Execution Integration Response should have a blank Default Mapping as status 200 response and a second non-default 500 response with Lambda Error Regex as `error.*`
+  * The Method Execution Method Response should have a 200 and 500 response configured with no headers and empty models.
+  * Example Swagger Import file:
 ```
 {
   "swagger": "2.0",
