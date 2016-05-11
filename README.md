@@ -14,7 +14,8 @@ Additional Wordpress development on original Appointzilla Class Booking plugin.
 9. Name the function something like "mySMSNotificationHandler" and select the latest NodeJS runtime.
 10. Enter the code from below. Be sure to insert your **Topic ARN** in your code.
 
-```var AWS = require("aws-sdk");
+```
+var AWS = require("aws-sdk");
 
 exports.handler = function(event, context, callback) {
     var name = JSON.stringify(event.name, null);
@@ -39,7 +40,8 @@ exports.handler = function(event, context, callback) {
             callback(null, "OK");
         }
     });
-};```
+};
+```
 
 11. Use the "index.handler" Handler
 12. Under Role, select create new Basic Execution Role and assign the default oneClick_lambda_basic_execution role and click allow.
@@ -47,7 +49,8 @@ exports.handler = function(event, context, callback) {
 14. After you're done with your Lambda function, you'll create an API Gateway to hit it from the Internet. Find API Gateway under the main services.
 15. Create API and a Resouce, and link it to your existing Lambda function. Use a POST method. Deploy the API & test. The instructions are here: http://docs.aws.amazon.com/apigateway/latest/developerguide/getting-started.html
 ..* The Method Execution Integration Request requires a Body Mapping Template Content-Type application/json that is:
-```#set($inputRoot = $input.path('$'))
+```
+#set($inputRoot = $input.path('$'))
 {
   "name" : "$inputRoot.name",
   "email" : "$inputRoot.email",
@@ -116,6 +119,7 @@ exports.handler = function(event, context, callback) {
       "type": "object"
     }
   }
-}```
+}
+```
 
 
