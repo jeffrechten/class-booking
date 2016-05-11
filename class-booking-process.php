@@ -1,4 +1,6 @@
 <?php
+    // Edited by Jeff Rechten 2016-05-02
+
     //Class Booking Details
     if(isset($_POST['Action'])) {
         $Action = $_POST['Action'];
@@ -122,7 +124,7 @@
                                     <td>&nbsp;</td>
                                     <td>&nbsp;</td>
                                     <td>
-                                        <button type="button" onclick="return JoinClass(<?php echo $ClassId; ?>, '<?php echo $JoiningDate; ?>');"class="apcal_btn apcal_btn-success"><i class="icon-ok icon-plus icon-white"></i> Join Class</button>
+                                        <button type="button" onclick="return JoinClass(<?php echo $ClassId; ?>, '<?php echo $JoiningDate; ?>');" class="apcal_btn apcal_btn-success"><i class="icon-ok icon-plus icon-white"></i> Join Class</button>
                                         <button type="button" onclick="return StopBooking();" class="apcal_btn apcal_btn-danger"><i class="icon-remove icon-white"></i> Cancel</button>
                                     </td>
                                 </tr>
@@ -199,155 +201,167 @@
             $Status = "pending";
             $BookedBy = "user";
 
-            $NewBooking_sql = $wpdb->prepare("INSERT INTO `$ManageClassBookingsTable` (`id`, `class_id`, `name`, `email`, `phone`, `sn`, `joining_date`, `key`, `status`, `booked_by`, `book_date_time`) VALUES (NULL, %d, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)", $ClassId, $Name, $Email, $Phone, $Sn, $JoiningDate, $Key, $Status, $BookedBy);
-            //$NewBookingSQL = "INSERT INTO `$ManageClassBookingsTable` (`id`, `class_id`, `name`, `email`, `phone`, `sn`, `joining_date`, `key`, `status`, `booked_by`, `book_date_time`) VALUES (NULL, '$ClassId', '$Name', '$Email', '$Phone', '$Sn', '$JoiningDate', '$Key', '$Status', '$BookedBy', CURRENT_TIMESTAMP);";
-            ?><div id="booking-result-div" class="apcal_alert apcal_alert-info"><?php
-            if($wpdb->query($NewBooking_sql)) {
-                $BookingId = mysql_insert_id();
-                //add class client - first check already exist
-                $ClassClientsTable = $wpdb->prefix . "apcal_pre_class_clients";
-                $SearchClient = $wpdb->get_row("SELECT `id` FROM `$ClassClientsTable` WHERE `email` = '$Email'");
-                if(!count($SearchClient)) {
-                    //insert new client
-                    $client_insert_sql = $wpdb->prepare("INSERT INTO `$ClassClientsTable` (`id`, `name`, `email`, `phone`, `sn`) VALUES (NULL, %s, %s, %s, %s)", $Name, $Email, $Phone, $Sn);
-                    $wpdb->query($client_insert_sql);
-                    //$wpdb->query("INSERT INTO `$ClassClientsTable` (`id`, `name`, `email`, `phone`, `sn`) VALUES (NULL, '$Name', '$Email', '$Phone', '$Sn')");
-                    $ClientId = mysql_insert_id();
-                } else {
-                    $ClientId = $SearchClient->id;
-                    //update existing client details
-                    $client_update_sql = $wpdb->prepare("UPDATE `$ClassClientsTable` SET `name` = %s, `phone` = %s, `sn` = %s WHERE `id` = %d", $Name, $Phone, $Sn, $ClientId);
-                    $wpdb->query($client_update_sql);
-                    //$wpdb->query("UPDATE `$ClassClientsTable` SET `name` = '$Name', `phone` = '$Phone', `sn` = '$Sn' WHERE `id` = '$ClientId';");
-                }
+            // Check to ensure against overbookings due to browser time 
+            $available_seats_sql = $wpdb->prepare( "SELECT `capacity`-(SELECT COUNT(*) FROM `$ClassBookingsTable` WHERE `class_id` = %d AND `status` IN('Pending', 'Approved')) FROM `$ClassesTable` WHERE `id` = %d", $ClassId, $ClassId );
+            $available_seats = $wpdb->get_var( $available_seats_sql );
+            if ( $available_seats > 0 ) {
+	            // Start booking
+	            $NewBooking_sql = $wpdb->prepare("INSERT INTO `$ManageClassBookingsTable` (`id`, `class_id`, `name`, `email`, `phone`, `sn`, `joining_date`, `key`, `status`, `booked_by`, `book_date_time`) VALUES (NULL, %d, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)", $ClassId, $Name, $Email, $Phone, $Sn, $JoiningDate, $Key, $Status, $BookedBy);
+	            //$NewBookingSQL = "INSERT INTO `$ManageClassBookingsTable` (`id`, `class_id`, `name`, `email`, `phone`, `sn`, `joining_date`, `key`, `status`, `booked_by`, `book_date_time`) VALUES (NULL, '$ClassId', '$Name', '$Email', '$Phone', '$Sn', '$JoiningDate', '$Key', '$Status', '$BookedBy', CURRENT_TIMESTAMP);";
+	            ?>
+				<div id="booking-result-div" class="apcal_alert apcal_alert-info">
+				<?php
+	            if($wpdb->query($NewBooking_sql)) {
+	                $BookingId = mysql_insert_id();
+	                //add class client - first check already exist
+	                $ClassClientsTable = $wpdb->prefix . "apcal_pre_class_clients";
+	                $SearchClient = $wpdb->get_row("SELECT `id` FROM `$ClassClientsTable` WHERE `email` = '$Email'");
+	                if(!count($SearchClient)) {
+	                    //insert new client
+	                    $client_insert_sql = $wpdb->prepare("INSERT INTO `$ClassClientsTable` (`id`, `name`, `email`, `phone`, `sn`) VALUES (NULL, %s, %s, %s, %s)", $Name, $Email, $Phone, $Sn);
+	                    $wpdb->query($client_insert_sql);
+	                    //$wpdb->query("INSERT INTO `$ClassClientsTable` (`id`, `name`, `email`, `phone`, `sn`) VALUES (NULL, '$Name', '$Email', '$Phone', '$Sn')");
+	                    $ClientId = mysql_insert_id();
+	                } else {
+	                    $ClientId = $SearchClient->id;
+	                    //update existing client details
+	                    $client_update_sql = $wpdb->prepare("UPDATE `$ClassClientsTable` SET `name` = %s, `phone` = %s, `sn` = %s WHERE `id` = %d", $Name, $Phone, $Sn, $ClientId);
+	                    $wpdb->query($client_update_sql);
+	                    //$wpdb->query("UPDATE `$ClassClientsTable` SET `name` = '$Name', `phone` = '$Phone', `sn` = '$Sn' WHERE `id` = '$ClientId';");
+	                }
 
-                // Booking Details & Thank you Message
-                //Get Class Details
-                $ClassData = $wpdb->get_row("SELECT * FROM `$ClassesTable` WHERE `id` = '$ClassId'");
-                if(count($ClassData)) {
-                    $ClassName = ucwords($ClassData->name);
-                    if($TimeFormat == "h:i") { $BTimeFormat = "h:ia"; }
-                    $Date = date($DateFormat, strtotime($ClassData->start_date))." <strong>-</strong> ".date($DateFormat, strtotime($ClassData->end_date));
-                    $Time = date($BTimeFormat, strtotime($ClassData->start_time))." <strong>-</strong> ".date($BTimeFormat, strtotime($ClassData->end_time));
-                }
+	                // Booking Details & Thank you Message
+	                //Get Class Details
+	                $ClassData = $wpdb->get_row("SELECT * FROM `$ClassesTable` WHERE `id` = '$ClassId'");
+	                if(count($ClassData)) {
+	                    $ClassName = ucwords($ClassData->name);
+	                    if($TimeFormat == "h:i") { $BTimeFormat = "h:ia"; }
+	                    $Date = date($DateFormat, strtotime($ClassData->start_date))." <strong>-</strong> ".date($DateFormat, strtotime($ClassData->end_date));
+	                    $Time = date($BTimeFormat, strtotime($ClassData->start_time))." <strong>-</strong> ".date($BTimeFormat, strtotime($ClassData->end_time));
+	                }
 
-                /**
-                 * Send Notification
-                 * --Check notification enable ON/OFF
-                 * --Check admin/client/notification is ON/OFF
-                 */
-                $AllNotificationSettings = unserialize(get_option('acb_notification_settings'));
-                if(count($AllNotificationSettings)) {
-                    $EnableNotification = $AllNotificationSettings['acb_enable_notification'];
-                    $NotifyAdmin = $AllNotificationSettings['acb_notify_admin'];
-                    $NotifyClient = $AllNotificationSettings['acb_notify_client'];
-                    $NotificationType = $AllNotificationSettings['acb_notification_type'];
+	                /**
+	                 * Send Notification
+	                 * --Check notification enable ON/OFF
+	                 * --Check admin/client/notification is ON/OFF
+	                 */
+	                $AllNotificationSettings = unserialize(get_option('acb_notification_settings'));
+	                if(count($AllNotificationSettings)) {
+	                    $EnableNotification = $AllNotificationSettings['acb_enable_notification'];
+	                    $NotifyAdmin = $AllNotificationSettings['acb_notify_admin'];
+	                    $NotifyClient = $AllNotificationSettings['acb_notify_client'];
+	                    $NotificationType = $AllNotificationSettings['acb_notification_type'];
 
-                    if($EnableNotification == "yes") {
-                        //include notification class
-                        require_once('menu-pages/notification-class.php');
-                        $Notification = new Notification();
-                        $On = "pending";
-                        $BlogName =  get_bloginfo('name');
+	                    if($EnableNotification == "yes") {
+	                        //include notification class
+	                        require_once('menu-pages/notification-class.php');
+	                        $Notification = new Notification();
+	                        $On = "pending";
+	                        $BlogName =  get_bloginfo('name');
 
-                        //notify client
-                        if($NotifyClient == "yes") {
-                            $Notification->NotifyClient($On, $BookingId, $ClassId, $ClientId, $BlogName, $DateFormat, $TimeFormat);
-                        }
+	                        //notify client
+	                        if($NotifyClient == "yes") {
+	                            $Notification->NotifyClient($On, $BookingId, $ClassId, $ClientId, $BlogName, $DateFormat, $TimeFormat);
+	                        }
 
-                        //notify admin
-                        if($NotifyAdmin == "yes") {
-                            $Notification->NotifyAdmin($BookingId, $ClassId, $ClientId, $BlogName, $DateFormat, $TimeFormat);
-                            $url = "https://ymrx5t7383.execute-api.us-east-1.amazonaws.com/mwfsds/sms";
-                            $postData = array(
-                                "name" => $Name,
-                                "email" => $Email,
-                                "phone" => $Phone,
-                                "note" => $Sn
-                            );
-                            $postData = json_encode($postData);
-                            $options = array(
-                                "http" => array(
-                                    "header" => array("Content-Type: application/json",
-                                        "x-api-key: c7KZXMhNC89D8mflwhpGC6iXtXbGTlfM9ZuNT1dR"
-                                    ),
-                                    "method" => "POST",
-                                    "content" => $postData                                  
-                                )
-                            );
-                            $context = stream_context_create($options);
-                            @$result = file_get_contents($url, false, $context);
-                            if ($result === FALSE) {
+	                        //notify admin
+	                        if($NotifyAdmin == "yes") {
+	                            $Notification->NotifyAdmin($BookingId, $ClassId, $ClientId, $BlogName, $DateFormat, $TimeFormat);
+	                            $url = "https://ymrx5t7383.execute-api.us-east-1.amazonaws.com/mwfsds/sms";
+	                            $postData = [
+	                                "name" => $Name,
+	                                "email" => $Email,
+	                                "phone" => $Phone,
+	                                "note" => $Sn
+	                            ];
+	                            $postData = json_encode($postData);
+	                            $options = [
+	                                "http" => [
+	                                    "header" => ["Content-Type: application/json",
+	                                        "x-api-key: c7KZXMhNC89D8mflwhpGC6iXtXbGTlfM9ZuNT1dR"
+	                                    ],
+	                                    "method" => "POST",
+	                                    "content" => $postData                                  
+	                                ]
+	                            ];
+	                            $context = stream_context_create($options);
+	                            @$result = file_get_contents($url, false, $context);
+	                            if ($result === FALSE) {
                                     $e = var_export($http_response_header, true);
                                     mail("crhpjeff@yahoo.com","MWFSDS Error","Failed to get contents 1 " . $result . " and " . $e,"From: webmaster@midwestfivestardrivingschool.com" . "\r\n");
-                            } else {
-                                if ($http_response_header[0] != 'HTTP/1.1 200 OK') {
-                                    $e = var_export($http_response_header, true);
-                                    mail("crhpjeff@yahoo.com","MWFSDS Error","Failed to get contents 2 " . $result . " and " . $e . " also " . $http_response_header[0],"From: webmaster@midwestfivestardrivingschool.com" . "\r\n");
-                                } else {
-                                    mail("crhpjeff@yahoo.com","MWFSDS success","Got contents 1 " . $result,"From: webmaster@midwestfivestardrivingschool.com" . "\r\n");
-                                }
-                            }
+	                            } else {
+	                                if ($http_response_header[0] != 'HTTP/1.1 200 OK') {
+	                                    $e = var_export($http_response_header, true);
+	                                    mail("crhpjeff@yahoo.com","MWFSDS Error","Failed to get contents 2 " . $result . " and " . $e . " also " . $http_response_header[0],"From: webmaster@midwestfivestardrivingschool.com" . "\r\n");
+	                                } else {
+	                                    mail("crhpjeff@yahoo.com","MWFSDS success","Got contents 1 " . $result,"From: webmaster@midwestfivestardrivingschool.com" . "\r\n");
+	                                }
+	                            } // end if result false else
+	                        } // end if notify admin
+	                    } // end if notification enabled 
+	                } //end of notification settings
+	                ?>
+		            <!--display class booking details-->
+	                <span style="text-align: center"><?php echo $ThankYouMessage ?></span>
+	                <hr><br>
+	                <strong><?php _e("Booking Details are", "appointzilla"); ?>:</strong>
+	                <input type="hidden" id="booking-id" name="booking-id" value="<?php echo $BookingId; ?>" />
+	                <table>
+	                    <tr>
+	                        <td><?php _e("Name", "appointzilla"); ?></td>
+	                        <td>:</td>
+	                        <td><?php echo ucwords($Name); ?></td>
+	                    </tr>
+	                    <tr>
+	                        <td><?php _e("Email", "appointzilla"); ?></td>
+	                        <td>:</td>
+	                        <td><?php echo $Email; ?></td>
+	                    </tr>
+	                    <tr>
+	                        <td><?php _e("Phone", "appointzilla"); ?></td>
+	                        <td>:</td>
+	                        <td><?php echo $Phone; ?></td>
+	                    </tr>
+	                    <tr>
+	                        <td><?php _e("Booked Class", "appointzilla"); ?></td>
+	                        <td>:</td>
+	                        <td><?php echo ucwords($ClassName); ?></td>
+	                    </tr>
+	                    <tr>
+	                        <td><?php _e("Joining Date", "appointzilla"); ?></td>
+	                        <td>:</td>
+	                        <td><?php echo date("j M Y", strtotime($_POST['JoiningDate'])); ?></td>
+	                    </tr>
+	                    <tr>
+	                        <td><?php _e("Class Time", "appointzilla"); ?></td>
+	                        <td>:</td>
+	                        <td><?php echo $Time; echo $Date; echo $TimeFormat; echo $BTimeFormat ?></td>
+	                    </tr>
+	                    <tr>
+	                        <td><?php _e("Booking Status", "appointzilla"); ?></td>
+	                        <td>:</td>
+	                        <td><?php echo ucfirst($Status); ?></td>
+	                    </tr>
+		                <tr>
+	                        <td>&nbsp;</td>
+	                        <td>&nbsp;</td>
+							<td><button id="done" class="apcal_btn" onclick="return Done();"><i class="icon-ok"></i> <?php _e("Done", "appointzilla"); ?></button></td>
+						</tr>
+					</table>
+					<?php
+				} else {
+	                echo _e("Sorry! your booking request not completed.", "appointzilla");
+	            }
+	            ?></div><?php
+	        } else { // available seats if
+				?>
+				<div id="booking-result-div" class="apcal_alert apcal_alert-info">
+				<span style="text-align: center"><?php echo _e("Warning!"," appointzilla");?></span>
+	                <hr><br><div>
+	                <strong><?php echo _e("This class could not be booked because there aren't enough available seats now. Please try again.", "appointzilla"); ?></strong></div></div>
+				<?php
+			} // end available seats else
+	    } // end book class check
+	} // end post var set check
 
-                        }
-                    }
-                } //edn of notification settings
-                ?>
-                <!--display class booking details-->
-                <span style="text-align: center'"><?php echo $ThankYouMessage ?></span>
-                <hr><br>
-                <strong><?php _e("Booking Details are", "appointzilla"); ?>:</strong>
-                <input type="hidden" id="booking-id" name="booking-id" value="<?php echo $BookingId; ?>" />
-                <table>
-                    <tr>
-                        <td><?php _e("Name", "appointzilla"); ?></td>
-                        <td>:</td>
-                        <td><?php echo ucwords($Name); ?></td>
-                    </tr>
-                    <tr>
-                        <td><?php _e("Email", "appointzilla"); ?></td>
-                        <td>:</td>
-                        <td><?php echo $Email; ?></td>
-                    </tr>
-                    <tr>
-                        <td><?php _e("Phone", "appointzilla"); ?></td>
-                        <td>:</td>
-                        <td><?php echo $Phone; ?></td>
-                    </tr>
-                    <tr>
-                        <td><?php _e("Booked Class", "appointzilla"); ?></td>
-                        <td>:</td>
-                        <td><?php echo ucwords($ClassName); ?></td>
-                    </tr>
-                    <tr>
-                        <td><?php _e("Joining Date", "appointzilla"); ?></td>
-                        <td>:</td>
-                        <td><?php echo date("j M Y", strtotime($_POST['JoiningDate'])); ?></td>
-                    </tr>
-
-                    <tr>
-                        <td><?php _e("Class Time", "appointzilla"); ?></td>
-                        <td>:</td>
-                        <td><?php echo $Time; echo $Date; echo $TimeFormat; echo $BTimeFormat ?></td>
-                    </tr>
-                    <tr>
-                        <td><?php _e("Booking Status", "appointzilla"); ?></td>
-                        <td>:</td>
-                        <td><?php echo ucfirst($Status); ?></td>
-                    </tr>
-                    <tr>
-                        <td>&nbsp;</td>
-                        <td>&nbsp;</td>
-                        <td>
-                            <button id="done" class="apcal_btn" onclick="return Done();"><i class="icon-ok"></i> <?php _e("Done", "appointzilla"); ?></button>
-                        </td>
-                    </tr>
-                </table>
-                <?php
-            } else {
-                echo _e("Sorry! your booking request not completed.", "appointzilla");
-            }
-            ?></div><?php
-        }
-    }
 ?>
