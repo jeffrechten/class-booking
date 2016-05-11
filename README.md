@@ -56,11 +56,13 @@ exports.handler = function(event, context, callback) {
   "email" : "$inputRoot.email",
   "phone" : "$inputRoot.phone",
   "note" : "$inputRoot.note"
-}```
+}
+```
 ..* The Method Execution Integration Response should have a blank Default Mapping as status 200 response and a second non-default 500 response with Lambda Error Regex as `error.*`
 ..* The Method Execution Method Response should have a 200 and 500 response configured with no headers and empty models.
 ..* Example Swagger Import file:
-```{
+```
+{
   "swagger": "2.0",
   "info": {
     "version": "2016-04-12T00:43:28Z",
