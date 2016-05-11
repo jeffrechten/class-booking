@@ -10,6 +10,7 @@ if(count($AllNotificationSettings)) {
     $SMTPHost = $AllNotificationSettings['acb_smtp_host_name'];
     $SMTPPort = $AllNotificationSettings['acb_smtp_port'];
     $SMTPEmail = $AllNotificationSettings['acb_smtp_admin_email'];
+    $sms_notify_enabled = $AllNotificationSettings['acb_sms_notify_enabled'];
     $sms_api_uri = $AllNotificationSettings['acb_sms_api_uri'];
     $sms_api_key = $AllNotificationSettings['acb_sms_api_key'];
 } else {
@@ -26,6 +27,7 @@ if(count($AllNotificationSettings)) {
     $SMTPPort = "";
     $SMTPEmail = "";
     $SMTPPassword = "";
+	$sms_notify_enabled = "";
     $sms_api_uri = "";
     $sms_api_key = "";
 }
@@ -134,6 +136,39 @@ if(count($AllNotificationSettings)) {
                     </div>
                 </div>
             </div>
+			
+			<!-- SMS Notify -->
+            <div class="control-group">
+                <label class="label label-info span2" style="padding: 8px 10px;"><?php _e("Notify Admin SMS", "appointzilla"); ?></label>
+                <div class="control pull-left">
+                    <select id="notify-sms" name="notify-sms" style="margin-left: 15px;">
+                        <option <?php if($sms_notify_enabled == "yes") echo "selected='selected'"; ?>  value="yes"><?php _e("Yes", "appointzilla"); ?></option>
+                        <option <?php if($sms_notify_enabled == "no") echo "selected='selected'"; ?>  value="no"><?php _e("No", "appointzilla"); ?></option>
+                    </select>
+                </div>
+            </div>
+			
+			<!-- SMS Settings -->
+			<div id="sms-settings" style="display: <?php if( "yes" == $sms_notify_enabled ) { echo ""; } else { echo "none"; } ?>">
+				<!-- SMS API URI -->
+				<div class="control-group">
+					<label class="label label-info span2" style="padding: 8px 10px;"><?php _e( "SMS API URI", "appointzilla" ); ?></label>
+					<div class="control pull-left">
+						<input type="text" id="sms_api_uri" name="sms_api_uri" value="<?php echo $sms_api_uri; ?>" style="margin-left: 15px;">
+					</div>
+				</div>
+
+				<!-- SMS API Key -->
+				<div class="control-group">
+					<label class="label label-info span2" style="padding: 8px 10px;"><?php _e( "SMS API Key", "appointzilla" ); ?></label>
+					<div class="control pull-left">
+						<input type="text" id="sms_api_key" name="sms_api_key" value="<?php echo $sms_api_key; ?>" style="margin-left: 15px;">
+					</div>
+				</div>
+				<div class="control-group">
+					<p>Find documentation on using the AWS integration <a href="https://github.com/jeffrechten/class-booking/blob/master/README.md">here</a></p>
+				</div>
+			</div>
 
             <!--save button div-->
             <div class="control-group">
@@ -163,6 +198,16 @@ if(count($AllNotificationSettings)) {
             });
 
             //on change notification type
+            jQuery("#notify-sms").change(function() {
+                //if wp mail selected
+                if(jQuery("#notify-sms").val() == "yes") {
+                    jQuery("#sms-settings").show();
+                } else {
+                    jQuery("#sms-settings").hide();
+                }
+            });
+			
+            //on change notification type
             jQuery("#notification-type").change(function() {
                 //if wp mail selected
                 if(jQuery("#notification-type").val() == "wp-mail") {
@@ -185,6 +230,7 @@ if(count($AllNotificationSettings)) {
                     jQuery("#smtp-mail-div").hide();
                 }
             });
+
         });
 
         //validating & saving notification settings
