@@ -241,6 +241,7 @@ if(count($AllNotificationSettings)) {
             var NotifyAdmin = jQuery("#notify-admin").val();
             var NotifyClient = jQuery("#notify-client").val();
             var NotificationType = jQuery("#notification-type").val();
+			var NotifySMS = jQuery("#notify-sms").val();
 
             //if notification enabled
             if(EnableNotification == "yes") {
@@ -317,6 +318,23 @@ if(count($AllNotificationSettings)) {
 
                     var PostData2 = "&SMTPHost=" + SMTPHost + "&SMTPPort=" + SMTPPort + "&SMTPEmail=" + SMTPEmail + "&SMTPPassword=" + SMTPPassword;
                 }
+				
+				// SMS Notification selected
+				if ( NotifySMS == "yes" ) {
+					var SMSAPIURI = jQuery("#sms_api_uri").val();
+					var SMSAPIKey = jQuery("#sms_api_key").val();
+					
+					if ( SMSAPIURI == '' ) {
+						jQuery("#sms_api_uri").after('<span class="acb-error">&nbsp;<strong><?php _e('Enter SMS API URI here.' ,'appointzilla'); ?></strong></span>');
+						return false;
+					}
+					if ( SMSAPIKey == '' ) {
+						jQuery("#sms_api_key").after('<span class="acb-error">&nbsp;<strong><?php _e('Enter SMS API key here.' ,'appointzilla'); ?></strong></span>');
+						return false;
+					}
+					
+					PostData2 = PostData2 + "&NotifySMS=" + NotifySMS + "&SMSAPIURI=" + SMSAPIURI + "&SMSAPIKey=" + SMSAPIKey;
+				}
 
                 var PostData1 = "Action=" + Action + "&EnableNotification=" + EnableNotification + "&NotificationType=" + NotificationType;
                 var PostData3 = "&NotifyAdmin=" + NotifyAdmin +"&NotifyClient=" + NotifyClient;
@@ -379,6 +397,18 @@ if(isset($_POST['Action'])) {
                 $SMTPEmail = "";
                 $SMTPPassword = "";
             }
+			
+			//SMS selected
+			$sms_notify_enabled = $_POST['NotifySMS'];
+			if ( "yes" == $sms_notify_enabled ) {
+				$sms_api_uri = $_POST['SMSAPIURI'];
+				$sms_api_key = $_POST['SMSAPIKey'];
+			} else {
+				$sms_notify_enabled = "no";
+				$sms_api_uri = "";
+				$sms_api_key = "";
+			}
+			
         } else {
             // notification disabled
             $NotifyAdmin = "no";
@@ -390,6 +420,9 @@ if(isset($_POST['Action'])) {
             $SMTPPort = "";
             $SMTPEmail = "";
             $SMTPPassword = "";
+			$sms_notify_enabled = "";
+			$sms_api_uri = "";
+			$sms_api_key = "";
         }
         $NotificationSettingsArray = array(
             'acb_enable_notification' => $EnableNotification,
@@ -401,7 +434,10 @@ if(isset($_POST['Action'])) {
             'acb_smtp_host_name' => $SMTPHost,
             'acb_smtp_port' => $SMTPPort,
             'acb_smtp_admin_email' => $SMTPEmail,
-            'acb_smtp_admin_password' => $SMTPPassword
+            'acb_smtp_admin_password' => $SMTPPassword,
+			'acb_sms_notify_enabled' => $sms_notify_enabled,
+			'acb_sms_api_uri' => $sms_api_uri,
+			'acb_sms_api_key' => $sms_api_key
         );
         update_option('acb_notification_settings', serialize($NotificationSettingsArray));
     }
