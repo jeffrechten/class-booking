@@ -251,6 +251,9 @@
 	                    $NotifyAdmin = $AllNotificationSettings['acb_notify_admin'];
 	                    $NotifyClient = $AllNotificationSettings['acb_notify_client'];
 	                    $NotificationType = $AllNotificationSettings['acb_notification_type'];
+						$sms_notify_enabled = $AllNotificationSettings['acb_sms_notify_enabled'];
+                        $sms_api_uri = $AllNotificationSettings['acb_sms_api_uri'];
+                        $sms_api_key = $AllNotificationSettings['acb_sms_api_key'];
 
 	                    if($EnableNotification == "yes") {
 	                        //include notification class
@@ -267,36 +270,27 @@
 	                        //notify admin
 	                        if($NotifyAdmin == "yes") {
 	                            $Notification->NotifyAdmin($BookingId, $ClassId, $ClientId, $BlogName, $DateFormat, $TimeFormat);
-	                            $url = "https://ymrx5t7383.execute-api.us-east-1.amazonaws.com/mwfsds/sms";
-	                            $postData = [
-	                                "name" => $Name,
-	                                "email" => $Email,
-	                                "phone" => $Phone,
-	                                "note" => $Sn
-	                            ];
-	                            $postData = json_encode($postData);
-	                            $options = [
-	                                "http" => [
-	                                    "header" => ["Content-Type: application/json",
-	                                        "x-api-key: c7KZXMhNC89D8mflwhpGC6iXtXbGTlfM9ZuNT1dR"
-	                                    ],
-	                                    "method" => "POST",
-	                                    "content" => $postData                                  
-	                                ]
-	                            ];
-	                            $context = stream_context_create($options);
-	                            @$result = file_get_contents($url, false, $context);
-	                            if ($result === FALSE) {
-                                    $e = var_export($http_response_header, true);
-                                    mail("crhpjeff@yahoo.com","MWFSDS Error","Failed to get contents 1 " . $result . " and " . $e,"From: webmaster@midwestfivestardrivingschool.com" . "\r\n");
-	                            } else {
-	                                if ($http_response_header[0] != 'HTTP/1.1 200 OK') {
-	                                    $e = var_export($http_response_header, true);
-	                                    mail("crhpjeff@yahoo.com","MWFSDS Error","Failed to get contents 2 " . $result . " and " . $e . " also " . $http_response_header[0],"From: webmaster@midwestfivestardrivingschool.com" . "\r\n");
-	                                } else {
-	                                    mail("crhpjeff@yahoo.com","MWFSDS success","Got contents 1 " . $result,"From: webmaster@midwestfivestardrivingschool.com" . "\r\n");
-	                                }
-	                            } // end if result false else
+	                            if ( "yes" == $sms_notify_enabled ) {
+									$postData = array(
+										"name" => $Name,
+										"email" => $Email,
+										"phone" => $Phone,
+										"note" => $Sn
+									);
+									$postData = json_encode($postData);
+									$params = array(
+										'method' => 'POST',
+										'httpversion' => "1.1",
+										'timeout' => 5,
+										'sslverify' => true,
+										'blocking' => false,
+										'headers' => array( 'Content-Type' => 'application/json', 'x-api-key' => $sms_api_key ),
+										'body' => $postData
+									);
+									$response = wp_safe_remote_post( $sms_api_uri, $params )
+									//$url = "https://ymrx5t7383.execute-api.us-east-1.amazonaws.com/mwfsds/sms";
+	                                // "x-api-key: c7KZXMhNC89D8mflwhpGC6iXtXbGTlfM9ZuNT1dR"
+								}
 	                        } // end if notify admin
 	                    } // end if notification enabled 
 	                } //end of notification settings
