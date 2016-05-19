@@ -288,8 +288,6 @@
 										'body' => $postData
 									);
 									$response = wp_safe_remote_post( $sms_api_uri, $params )
-									//$url = "https://ymrx5t7383.execute-api.us-east-1.amazonaws.com/mwfsds/sms";
-	                                // "x-api-key: c7KZXMhNC89D8mflwhpGC6iXtXbGTlfM9ZuNT1dR"
 								}
 	                        } // end if notify admin
 	                    } // end if notification enabled 
