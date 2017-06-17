@@ -76,7 +76,7 @@ $ClassesCategories = $wpdb->get_results("SELECT * FROM `$ClassesCategorysTable` 
                 </thead>
                 <tbody>
                 <?php
-                $Classes = $wpdb->get_results("SELECT * FROM `$ClassesTable` WHERE `category_id` = '$CategoryId'");
+                $Classes = $wpdb->get_results("SELECT * FROM `$ClassesTable` WHERE `category_id` = '$CategoryId' ORDER BY `start_date` ASC");
                 $SNo = 1;
                 if(count($Classes)) {
                     foreach($Classes as $Class) {
@@ -92,7 +92,7 @@ $ClassesCategories = $wpdb->get_results("SELECT * FROM `$ClassesCategorysTable` 
                         } else {
                             $Date = date("d", strtotime($StartDate))."-".date("d-m-Y", strtotime($EndDate));
                         }*/
-                        $Date = date("d-m-Y", strtotime($StartDate));
+                        $Date = date("m-d-Y", strtotime($StartDate));
                         $Capacity = $Class->capacity;
                         $Cost = $Class->cost;
                         $Repeat = $Class->repeat;
